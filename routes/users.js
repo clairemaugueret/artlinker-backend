@@ -134,8 +134,6 @@ router.get("/:token", (req, res) => {
       },
     })
     .populate("subscription.type")
-    .populate("ongoingLoans.artItem")
-
     .populate({
       path: "ongoingLoans.artItem",
       populate: {
