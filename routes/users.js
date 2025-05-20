@@ -44,9 +44,19 @@ router.post("/signup", (req, res) => {
         });
 
         newUser.save().then((newDoc) => {
-          res.json({ result: true, token: newDoc.token });
-          // Send back the token of the new user to be saved in Redux store
-          // all the other information for the Redux store will be collected from the inputs in the frontend
+          const userInfo = {
+            token: newDoc.token,
+            email: newDoc.email,
+            firstname: newDoc.firstname,
+            lastname: newDoc.lastname,
+            favoriteItems: newDoc.favoriteItems,
+            hasSubcribed: false,
+            authorisedLoans: 0,
+            ongoingLoans: newDoc.ongoingLoans.length,
+          };
+
+          res.json({ result: true, userInfo: userInfo });
+          // Send back all the information needed for the Redux store
         });
       } else {
         // User already exists in database
@@ -72,7 +82,8 @@ router.post("/signin", (req, res) => {
   }
 
   Users.findOne({ email: req.body.email })
-    .populate("subscription")
+    .populate("favoriteItems")
+    .populate("subscription.type")
     .then((data) => {
       console.log("data", data);
       if (data && bcrypt.compareSync(req.body.password, data.password)) {
@@ -87,7 +98,7 @@ router.post("/signin", (req, res) => {
         if (data.subscription?.type) {
           // Check if the user has a subscription
           userInfo.hasSubcribed = true;
-          userInfo.authorisedLoans = data.subscription.numberOfLoans;
+          userInfo.authorisedLoans = data.subscription.type.numberOfLoans;
           userInfo.ongoingLoans = data.ongoingLoans.length;
         } else {
           // If the user does not have a subscription
@@ -115,11 +126,33 @@ router.get("/:token", (req, res) => {
   }
 
   Users.findOne({ token: req.params.token })
-    .populate("artitems")
-    .populate("subscription")
+    .populate({
+      path: "favoriteItems",
+      populate: {
+        path: "artothequePlace",
+        model: "places",
+      },
+    })
+    .populate("subscription.type")
+    .populate("ongoingLoans.artItem")
+
+    .populate({
+      path: "ongoingLoans.artItem",
+      populate: {
+        path: "artothequePlace",
+        model: "places",
+      },
+    })
+    .populate({
+      path: "previousLoans.artItem",
+      populate: {
+        path: "artothequePlace",
+        model: "places",
+      },
+    })
     .then((data) => {
       res.json({ result: true, userData: data });
-      // Send back all the information needed for the profile page
+      // Send back all the user information needed for the profile page
     })
     .catch((err) => {
       console.error("Error fetching documents:", err);
