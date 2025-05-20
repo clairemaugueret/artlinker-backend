@@ -1,9 +1,9 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+//CLAIRE
+const { checkBody } = require("../modules/checkBody");
+const bcrypt = require("bcrypt");
+const uid2 = require("uid2");
 
 module.exports = router;
