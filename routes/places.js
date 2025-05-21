@@ -32,7 +32,9 @@ router.post("/all", (req, res) => {
           }
         });
 
-        res.json({ result: true, artitemsList: filteredData });
+        filteredData.sort((a, b) => a.distance - b.distance);
+
+        res.json({ result: true, placesList: filteredData });
         // Send back the places list filtered with each time the calculated distance added
         // Send back an empty array if no items are found
       })

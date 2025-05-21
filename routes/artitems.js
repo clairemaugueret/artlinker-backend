@@ -34,6 +34,8 @@ router.post("/all", (req, res) => {
           }
         });
 
+        filteredData.sort((a, b) => a.distance - b.distance);
+
         res.json({ result: true, artitemsList: filteredData });
         // Send back the art items list filtered with each time the calculated distance added
         // Send back an empty array if no items are found
