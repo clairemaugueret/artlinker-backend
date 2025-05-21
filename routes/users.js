@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 
 require("../models/connection");
+const { getUpdatedFields } = require("../modules/getUpdatedFields");
 const { checkBody } = require("../modules/checkBody");
 const bcrypt = require("bcrypt");
 const uid2 = require("uid2");
@@ -154,6 +155,52 @@ router.get("/:token", (req, res) => {
     })
     .catch((err) => {
       console.error("Error fetching documents:", err);
+      res.status(500).json({ result: false, error: "Internal server error" });
+    });
+});
+
+//FATOUMATA
+//ROUTE to put user update info
+router.put("/update", (req, res) => {
+  // find the user info in the database
+  Users.findOne({ token: req.body.token })
+    .then((data) => {
+      if (data) {
+        //compare properties in the body with the database
+        const allowedFields = [
+          "firstname",
+          "lastname",
+          "phone",
+          "address",
+          "avatar",
+        ];
+        const updateData = getUpdatedFields(req.body, data, allowedFields);
+        // If the property is the same in the body and in the database, we don't update it
+        if (Object.keys(updateData).length === 0) {
+          res.json({ result: false, error: "No changes detected." });
+          return;
+        }
+        // If the property is different in the body, we update it in database
+        Users.updateOne({ token: req.body.token }, { $set: updateData })
+          .then(({ modifiedCount }) => {
+            // If the update is successful, we send back the updated user info
+            console.log("updateData", updateData);
+            if (modifiedCount === 0) {
+              res.json({ result: false, error: "No changes detected." });
+            } else {
+              res.json({ result: true, userInfo: updateData });
+            }
+          })
+          .catch((err) => {
+            console.error("Error updating user:", err);
+            res
+              .status(500)
+              .json({ result: false, error: "Internal server error" });
+          });
+      }
+    })
+    .catch((err) => {
+      console.error("Error fetching user:", err);
       res.status(500).json({ result: false, error: "Internal server error" });
     });
 });
