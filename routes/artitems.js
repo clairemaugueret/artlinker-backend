@@ -47,4 +47,25 @@ router.post("/all", (req, res) => {
   }
 });
 
+//FATOUMATA
+// ROUTE to get all art items by author
+router.get("/:artist", (req, res) => {
+  Artitems.find({ authors: req.body.artist })
+    .populate("artothequePlace")
+    .then((worksList) => {
+      if (worksList.length > 1) {
+        res.json({ result: true, worksList });
+      } else {
+        res.json({
+          result: false,
+          error: "No more works found for this artist",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("Error fetching documents:", err);
+      res.status(500).json({ result: false, error: "Internal server error" });
+    });
+});
+
 module.exports = router;
