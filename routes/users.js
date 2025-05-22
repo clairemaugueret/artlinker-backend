@@ -53,7 +53,7 @@ router.post("/signup", (req, res) => {
             favoriteItems: newDoc.favoriteItems,
             hasSubcribed: false,
             authorisedLoans: 0,
-            ongoingLoans: newDoc.ongoingLoans.length,
+            ongoingLoans: 0,
           };
 
           res.json({ result: true, userInfo: userInfo });
@@ -84,9 +84,8 @@ router.post("/signin", (req, res) => {
 
   Users.findOne({ email: req.body.email })
     .populate("favoriteItems")
-    .populate("subscription.type")
+    .populate("subscription.ref")
     .then((data) => {
-      console.log("data", data);
       if (data && bcrypt.compareSync(req.body.password, data.password)) {
         const userInfo = {
           token: data.token,
@@ -96,10 +95,10 @@ router.post("/signin", (req, res) => {
           favoriteItems: data.favoriteItems,
         };
 
-        if (data.subscription?.type) {
+        if (data.subscription?.ref) {
           // Check if the user has a subscription
           userInfo.hasSubcribed = true;
-          userInfo.authorisedLoans = data.subscription.type.numberOfLoans;
+          userInfo.authorisedLoans = data.subscription.borrowCapacity;
           userInfo.ongoingLoans = data.ongoingLoans.length;
         } else {
           // If the user does not have a subscription
@@ -134,7 +133,7 @@ router.get("/:token", (req, res) => {
         model: "places",
       },
     })
-    .populate("subscription.type")
+    .populate("subscription.ref")
     .populate({
       path: "ongoingLoans.artItem",
       populate: {
@@ -184,7 +183,6 @@ router.put("/update", (req, res) => {
         Users.updateOne({ token: req.body.token }, { $set: updateData })
           .then(({ modifiedCount }) => {
             // If the update is successful, we send back the updated user info
-            console.log("updateData", updateData);
             if (modifiedCount === 0) {
               res.json({ result: false, error: "No changes detected." });
             } else {
