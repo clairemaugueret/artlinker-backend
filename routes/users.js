@@ -93,7 +93,7 @@ router.post("/signin", (req, res) => {
           favoriteItems: data.favoriteItems,
         };
 
-        if (data.subscription?.type) {
+        if (data.subscription?.subscriptionType) {
           // Check if the user has a subscription
           userInfo.hasSubcribed = true;
           userInfo.authorisedLoans = data.subscription.worksCount;
