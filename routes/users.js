@@ -84,7 +84,6 @@ router.post("/signin", (req, res) => {
 
   Users.findOne({ email: req.body.email })
     .populate("favoriteItems")
-    .populate("subscription.ref")
     .then((data) => {
       if (data && bcrypt.compareSync(req.body.password, data.password)) {
         const userInfo = {
@@ -95,10 +94,10 @@ router.post("/signin", (req, res) => {
           favoriteItems: data.favoriteItems,
         };
 
-        if (data.subscription?.ref) {
+        if (data.subscription?.type) {
           // Check if the user has a subscription
           userInfo.hasSubcribed = true;
-          userInfo.authorisedLoans = data.subscription.borrowCapacity;
+          userInfo.authorisedLoans = data.subscription.worksCount;
           userInfo.ongoingLoans = data.ongoingLoans.length;
         } else {
           // If the user does not have a subscription
@@ -133,7 +132,6 @@ router.get("/:token", (req, res) => {
         model: "places",
       },
     })
-    .populate("subscription.ref")
     .populate({
       path: "ongoingLoans.artItem",
       populate: {
