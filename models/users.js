@@ -54,7 +54,7 @@ const usersSchema = mongoose.Schema({
     subscriptionType: String,
     createdAt: Date,
     updatedAt: Date,
-    workscount: Number,
+    worksCount: Number,
     durationMonth: Number,
     price: Number,
     calculatedEndDate: Date,

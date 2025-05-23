@@ -11,6 +11,7 @@ var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 var artitemsRouter = require("./routes/artitems");
 var placesRouter = require("./routes/places");
+var subscriptionsRouter = require("./routes/subscriptions");
 
 var app = express();
 const cors = require("cors");
@@ -26,5 +27,6 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/artitems", artitemsRouter);
 app.use("/places", placesRouter);
+app.use("/subscriptions", subscriptionsRouter);
 
 module.exports = app;
