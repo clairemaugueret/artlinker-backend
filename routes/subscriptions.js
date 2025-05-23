@@ -4,14 +4,13 @@ var router = express.Router();
 
 const { checkBody } = require("../modules/checkBody");
 
-const Artitems = require("../models/artitems");
 const Users = require("../models/users");
 
 router.put("/update", (req, res) => {
   const { token, subscriptionType, count, price } = req.body;
 
   if (!checkBody(req.body, ["token", "subscriptionType", "count", "price"])) {
-    res.json({ result: false, error: "Champs vides ou manquants." }); // Error message that can be displayed in the frontend
+    res.json({ result: false, error: "Champs vides ou manquants." });
     return;
   }
 
@@ -30,10 +29,10 @@ router.put("/update", (req, res) => {
       calculatedEndDate.setMonth(calculatedEndDate.getMonth() + durationMonth);
 
       // Mise à jour du sous-document subscription
-      user.subscription = user.subscription || {};
+      user.subscription = user.subscription || {}; // S'assure que le sous-document subscription existe (sinon on l'initialise à un objet vide)
       user.subscription.subscriptionType = subscriptionType;
       user.subscription.createdAt = createdAt;
-      user.subscription.worksCount = count; // <-- ici avec le bon nom
+      user.subscription.worksCount = count;
       user.subscription.price = price;
       user.subscription.durationMonth = durationMonth;
       user.subscription.calculatedEndDate = calculatedEndDate;
