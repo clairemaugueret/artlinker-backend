@@ -49,12 +49,13 @@ router.post("/all", (req, res) => {
 
 //FATOUMATA
 // ROUTE to get all art items by author
-router.get("/:artist", (req, res) => {
-  Artitems.find({ authors: req.body.artist })
+router.get("/:author", (req, res) => {
+  Artitems.find({ authors: req.params.author })
     .populate("artothequePlace")
-    .then((worksList) => {
-      if (worksList.length > 1) {
-        res.json({ result: true, worksList });
+    .then((data) => {
+      if (data.length > 1) {
+        console.log("data", data);
+        res.json({ result: true, worksList: data });
       } else {
         res.json({
           result: false,
