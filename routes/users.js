@@ -7,7 +7,6 @@ const { checkBody } = require("../modules/checkBody");
 const bcrypt = require("bcrypt");
 const uid2 = require("uid2");
 const Users = require("../models/users");
-const Subscriptions = require("../models/subscriptions");
 const Artitems = require("../models/artitems");
 const Places = require("../models/places");
 
