@@ -2,7 +2,13 @@ const mongoose = require("mongoose");
 
 //CLAIRE
 const subscriptionsSchema = mongoose.Schema({
-  type: {
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "users",
+  },
+  createdAt: Date,
+  updatedAt: Date,
+  subscriptiontype: {
     type: String,
     enum: [
       // option enum dans le schéma Mongoose pour restreindre les valeurs acceptées pour le champ
@@ -14,10 +20,13 @@ const subscriptionsSchema = mongoose.Schema({
     ],
     required: true,
   },
-  numberOfLoans: Number,
-  price: Number,
+  worksCount: Number,
   durationMonth: Number,
+  price: Number,
   loanDurationMonth: Number,
+
+  transactionId: String,
+  transactionStatus: String,
 });
 
 const Subscriptions = mongoose.model("subscriptions", subscriptionsSchema);
