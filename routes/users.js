@@ -158,41 +158,50 @@ router.get("/:token", (req, res) => {
 //FATOUMATA
 //ROUTE to put user update info
 router.put("/update", (req, res) => {
-  // find the user info in the database
+  if (!req.body.token) {
+    return res.status(400).json({ result: false, error: "Token is required" });
+  }
+  // recherche de l'utilisateur
   Users.findOne({ token: req.body.token })
     .then((data) => {
-      if (data) {
-        //compare properties in the body with the database
-        const allowedFields = [
-          "firstname",
-          "lastname",
-          "phone",
-          "address",
-          "avatar",
-        ];
-        const updateData = getUpdatedFields(req.body, data, allowedFields);
-        // If the property is the same in the body and in the database, we don't update it
-        if (Object.keys(updateData).length === 0) {
-          res.json({ result: false, error: "No changes detected." });
-          return;
-        }
-        // If the property is different in the body, we update it in database
-        Users.updateOne({ token: req.body.token }, { $set: updateData })
-          .then(({ modifiedCount }) => {
-            // If the update is successful, we send back the updated user info
-            if (modifiedCount === 0) {
-              res.json({ result: false, error: "No changes detected." });
-            } else {
-              res.json({ result: true, userInfo: updateData });
-            }
-          })
-          .catch((err) => {
-            console.error("Error updating user:", err);
-            res
-              .status(500)
-              .json({ result: false, error: "Internal server error" });
-          });
+      if (!data) {
+        return res.status(404).json({ result: false, error: "User not found" });
       }
+
+      //comparaison des données du body avec les infos de l'utilisateur dans la base de données
+      const allowedFields = [
+        "firstname",
+        "lastname",
+        "phone",
+        "address",
+        "avatar",
+      ];
+      const updateData = getUpdatedFields(req.body, data, allowedFields);
+      // Si les informations sont identiques, alors la base de données n'est pas mise à jour
+      if (Object.keys(updateData).length === 0) {
+        res.json({ result: false, message: "Aucun changement détecté." }); // message qui pourra être affiché dans le frontend
+        return;
+      }
+      // Si une ou des informations sont différentes, la base de données est mise à jour
+      Users.updateOne({ token: req.body.token }, { $set: updateData })
+        .then(({ modifiedCount }) => {
+          if (modifiedCount === 0) {
+            res.json({ result: false, message: "Aucun changement détecté." }); // message qui pourra être affiché dans le frontend
+          } else {
+            res.json({
+              result: true,
+              message: "Information(s) personnelle(s) modifiée(s).", // le message pourra être affiché dans le frontend
+              userInfo: updateData, // Ne renvoie que les champs modifiés (et pas la totalité des champs possibles)
+            });
+            // → à voir quand on sera sur l'écran si OK comme ça ou si préférable de tout renvoyer (et si on change d'avis, changer aussi TDD !!)
+          }
+        })
+        .catch((err) => {
+          console.error("Error updating user:", err);
+          res
+            .status(500)
+            .json({ result: false, error: "Internal server error" });
+        });
     })
     .catch((err) => {
       console.error("Error fetching user:", err);
