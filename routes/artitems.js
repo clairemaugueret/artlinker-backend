@@ -6,6 +6,8 @@ const { checkBody } = require("../modules/checkBody");
 const { getDistanceInKm } = require("../modules/getDistanceInKm");
 const Artitems = require("../models/artitems");
 const Places = require("../models/places");
+const User = require("../models/users");
+const { token } = require("morgan");
 
 // ROUTE to get all art items within 50 km of the given coordinates
 // fields required in the body: latitude, longitude
@@ -51,7 +53,7 @@ router.post("/all", (req, res) => {
 //route creation d'un prêt
 router.post("/createloan", async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.body.userId });
+    const user = await User.findOne({ token: req.body.token });
     if (!user) {
       return res.json({ result: false, error: "User not found" });
     }
@@ -65,7 +67,7 @@ router.post("/createloan", async (req, res) => {
         ongoingLoans: {
           artItem: req.body.artitemId,
           startDate: new Date(),
-          requestStatus: INIT_DEMAND_DISPO,
+          requestStatus: "INIT_DEMAND_DISPO",
           isExtendedLoan: false,
           loanPhotos: [],
           returnPhotos: [],
@@ -79,14 +81,10 @@ router.post("/createloan", async (req, res) => {
       return res.json({ result: false, error: "Art item not found" });
     }
 
-    artitem.loans.push({
-      userId: req.body.userId,
-      startDate: new Date(),
-      endDate: endDate,
-    });
+    artitem.disponibility = false;
+    artitem.expectedReturnDate = endDate;
 
     // Mise à jour du champ expectedReturnDate
-    artitem.expectedReturnDate = endDate;
 
     await artitem.save();
 
