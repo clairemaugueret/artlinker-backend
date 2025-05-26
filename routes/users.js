@@ -158,25 +158,4 @@ router.get("/:token", (req, res) => {
     });
 });
 
-//thomas
-//Route post sub user
-router.post("/user/sub", async (req, res) => {
-  const { userId, subDocId } = req.body;
-
-  // Trouver l'utilisateur
-  const user = await UserModel.findById(userId);
-  if (!user) {
-    return res.status(404).send("User not found");
-  }
-
-  // Trouver le sous-document
-  const subDoc = user.subDocuments.id(subDocId);
-  if (!subDoc) {
-    return res.status(404).send("Sub-document not found");
-  }
-
-  // Envoyer le sous-document en réponse
-  res.status(200).json(subDoc);
-});
-
 module.exports = router;

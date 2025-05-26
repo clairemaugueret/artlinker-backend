@@ -47,4 +47,57 @@ router.post("/all", (req, res) => {
   }
 });
 
+//thomas
+//route creation d'un prêt
+router.post("/createloan", async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.body.userId });
+    if (!user) {
+      return res.json({ result: false, error: "User not found" });
+    }
+
+    // Calcul de la date de fin de prêt (3 mois)
+    const endDate = new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000);
+
+    // Ajout dans ongoingLoans de l'utilisateur
+    await user.updateOne({
+      $push: {
+        ongoingLoans: {
+          artItem: req.body.artitemId,
+          startDate: new Date(),
+          requestStatus: INIT_DEMAND_DISPO,
+          isExtendedLoan: false,
+          loanPhotos: [],
+          returnPhotos: [],
+        },
+      },
+    });
+
+    // Ajout du prêt dans l'œuvre
+    const artitem = await Artitems.findById(req.body.artitemId);
+    if (!artitem) {
+      return res.json({ result: false, error: "Art item not found" });
+    }
+
+    artitem.loans.push({
+      userId: req.body.userId,
+      startDate: new Date(),
+      endDate: endDate,
+    });
+
+    // Mise à jour du champ expectedReturnDate
+    artitem.expectedReturnDate = endDate;
+
+    await artitem.save();
+
+    res.json({
+      result: true,
+      message: "Loan created successfully",
+    });
+  } catch (err) {
+    console.error("Error in /createloan:", err);
+    res.status(500).json({ result: false, error: "Internal server error" });
+  }
+});
+
 module.exports = router;
