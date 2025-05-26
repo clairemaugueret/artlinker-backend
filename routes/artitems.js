@@ -49,6 +49,28 @@ router.post("/all", (req, res) => {
   }
 });
 
+//FATOUMATA
+// ROUTE to get all art items by author
+router.get("/:author", (req, res) => {
+  Artitems.find({ authors: req.params.author })
+    .populate("artothequePlace")
+    .then((data) => {
+      if (data.length > 1) {
+        console.log("data", data);
+        res.json({ result: true, worksList: data });
+      } else {
+        res.json({
+          result: false,
+          error: "No more works found for this artist",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("Error fetching documents:", err);
+      res.status(500).json({ result: false, error: "Internal server error" });
+    });
+});
+
 //thomas
 //route creation d'un prêt
 router.post("/createloan", async (req, res) => {

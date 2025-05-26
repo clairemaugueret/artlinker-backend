@@ -2,11 +2,11 @@ var express = require("express");
 var router = express.Router();
 
 require("../models/connection");
+const { getUpdatedFields } = require("../modules/getUpdatedFields");
 const { checkBody } = require("../modules/checkBody");
 const bcrypt = require("bcrypt");
 const uid2 = require("uid2");
 const Users = require("../models/users");
-const Subscriptions = require("../models/subscriptions");
 const Artitems = require("../models/artitems");
 const Places = require("../models/places");
 
@@ -52,7 +52,7 @@ router.post("/signup", (req, res) => {
             favoriteItems: newDoc.favoriteItems,
             hasSubcribed: false,
             authorisedLoans: 0,
-            ongoingLoans: newDoc.ongoingLoans.length,
+            ongoingLoans: 0,
           };
 
           res.json({ result: true, userInfo: userInfo });
@@ -83,9 +83,7 @@ router.post("/signin", (req, res) => {
 
   Users.findOne({ email: req.body.email })
     .populate("favoriteItems")
-    .populate("subscription.type")
     .then((data) => {
-      console.log("data", data);
       if (data && bcrypt.compareSync(req.body.password, data.password)) {
         const userInfo = {
           token: data.token,
@@ -95,10 +93,10 @@ router.post("/signin", (req, res) => {
           favoriteItems: data.favoriteItems,
         };
 
-        if (data.subscription?.type) {
+        if (data.subscription?.subscriptionType) {
           // Check if the user has a subscription
           userInfo.hasSubcribed = true;
-          userInfo.authorisedLoans = data.subscription.type.numberOfLoans;
+          userInfo.authorisedLoans = data.subscription.worksCount;
           userInfo.ongoingLoans = data.ongoingLoans.length;
         } else {
           // If the user does not have a subscription
@@ -133,7 +131,6 @@ router.get("/:token", (req, res) => {
         model: "places",
       },
     })
-    .populate("subscription.type")
     .populate({
       path: "ongoingLoans.artItem",
       populate: {
@@ -154,6 +151,60 @@ router.get("/:token", (req, res) => {
     })
     .catch((err) => {
       console.error("Error fetching documents:", err);
+      res.status(500).json({ result: false, error: "Internal server error" });
+    });
+});
+
+//FATOUMATA
+//ROUTE to put user update info
+router.put("/update", (req, res) => {
+  if (!req.body.token) {
+    return res.status(400).json({ result: false, error: "Token is required" });
+  }
+  // recherche de l'utilisateur
+  Users.findOne({ token: req.body.token })
+    .then((data) => {
+      if (!data) {
+        return res.status(404).json({ result: false, error: "User not found" });
+      }
+
+      //comparaison des données du body avec les infos de l'utilisateur dans la base de données
+      const allowedFields = [
+        "firstname",
+        "lastname",
+        "phone",
+        "address",
+        "avatar",
+      ];
+      const updateData = getUpdatedFields(req.body, data, allowedFields);
+      // Si les informations sont identiques, alors la base de données n'est pas mise à jour
+      if (Object.keys(updateData).length === 0) {
+        res.json({ result: false, message: "Aucun changement détecté." }); // message qui pourra être affiché dans le frontend
+        return;
+      }
+      // Si une ou des informations sont différentes, la base de données est mise à jour
+      Users.updateOne({ token: req.body.token }, { $set: updateData })
+        .then(({ modifiedCount }) => {
+          if (modifiedCount === 0) {
+            res.json({ result: false, message: "Aucun changement détecté." }); // message qui pourra être affiché dans le frontend
+          } else {
+            res.json({
+              result: true,
+              message: "Information(s) personnelle(s) modifiée(s).", // le message pourra être affiché dans le frontend
+              userInfo: updateData, // Ne renvoie que les champs modifiés (et pas la totalité des champs possibles)
+            });
+            // → à voir quand on sera sur l'écran si OK comme ça ou si préférable de tout renvoyer (et si on change d'avis, changer aussi TDD !!)
+          }
+        })
+        .catch((err) => {
+          console.error("Error updating user:", err);
+          res
+            .status(500)
+            .json({ result: false, error: "Internal server error" });
+        });
+    })
+    .catch((err) => {
+      console.error("Error fetching user:", err);
       res.status(500).json({ result: false, error: "Internal server error" });
     });
 });
