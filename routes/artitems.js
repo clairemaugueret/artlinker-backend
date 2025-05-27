@@ -6,6 +6,8 @@ const { checkBody } = require("../modules/checkBody");
 const { getDistanceInKm } = require("../modules/getDistanceInKm");
 const Artitems = require("../models/artitems");
 const Places = require("../models/places");
+const User = require("../models/users");
+const { token } = require("morgan");
 
 // ROUTE to get all art items within 50 km of the given coordinates
 // fields required in the body: latitude, longitude
@@ -67,6 +69,55 @@ router.get("/:author", (req, res) => {
       console.error("Error fetching documents:", err);
       res.status(500).json({ result: false, error: "Internal server error" });
     });
+});
+
+//thomas
+//route creation d'un prêt
+router.post("/createloan", async (req, res) => {
+  try {
+    const user = await User.findOne({ token: req.body.token });
+    if (!user) {
+      return res.json({ result: false, error: "User not found" });
+    }
+
+    // Calcul de la date de fin de prêt (3 mois)
+    const endDate = new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000);
+
+    // Ajout dans ongoingLoans de l'utilisateur
+    await user.updateOne({
+      $push: {
+        ongoingLoans: {
+          artItem: req.body.artitemId,
+          startDate: new Date(),
+          requestStatus: "INIT_DEMAND_DISPO",
+          isExtendedLoan: false,
+          loanPhotos: [],
+          returnPhotos: [],
+        },
+      },
+    });
+
+    // Ajout du prêt dans l'œuvre
+    const artitem = await Artitems.findById(req.body.artitemId);
+    if (!artitem) {
+      return res.json({ result: false, error: "Art item not found" });
+    }
+
+    artitem.disponibility = false;
+    artitem.expectedReturnDate = endDate;
+
+    // Mise à jour du champ expectedReturnDate
+
+    await artitem.save();
+
+    res.json({
+      result: true,
+      message: "Loan created successfully",
+    });
+  } catch (err) {
+    console.error("Error in /createloan:", err);
+    res.status(500).json({ result: false, error: "Internal server error" });
+  }
 });
 
 module.exports = router;

@@ -177,14 +177,13 @@ describe("PUT /users/update", () => {
 
 //FATOUMATA
 //Test user Signin
-//test valid user - subcrition true
-it("POST/users/", async () => {
+//test valid user - subcription true
+it("POST /users/signin - subcription true", async () => {
   const response = await request(app).post("/users/signin").send({
     email: "test@email.fr",
     password: "Test123!",
   });
 
-  console.log(response.body.userInfo);
   expect(response.statusCode).toBe(200);
   expect(response.body.result).toBe(true);
   expect(response.body.userInfo.firstname).toBe("User");
@@ -196,13 +195,13 @@ it("POST/users/", async () => {
   expect(response.body.userInfo.hasSubcribed).toBe(true);
 });
 
-//test valid user - subcrition false
-it("POST/users/", async () => {
+//test valid user - subcription false
+it("POST /users/signin - subcription false", async () => {
   const response = await request(app).post("/users/signin").send({
     email: "test1@email.fr",
     password: "Test1123!",
   });
-  console.log(response.body.userInfo);
+
   expect(response.statusCode).toBe(200);
   expect(response.body.result).toBe(true);
 
@@ -216,7 +215,7 @@ it("POST/users/", async () => {
 });
 
 // Test invalid user - wrong password
-it("POST/users/", async () => {
+it("POST /users/signin - wrong password", async () => {
   const response = await request(app).post("/users/signin").send({
     email: "test@email.fr",
     password: "wrongpassword",
@@ -229,7 +228,7 @@ it("POST/users/", async () => {
 
 //FATOUMATA
 // Test GET /users/:token
-it("GET/users/:token", async () => {
+it("GET /users/:token", async () => {
   const response = await request(app).get(
     "/users/D4PeNUExmj8rrHBdci2LgONI7_u9GSuo"
   );

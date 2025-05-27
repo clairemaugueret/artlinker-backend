@@ -34,10 +34,10 @@ it("POST /places/all", async () => {
   const names = res.body.placesList.map((place) => place.name);
 
   // Vérifie que "Atelier de Raph" (situé à moins de 50km) est bien présent dans la liste
-  expect(names).toContain("Atelier de Raph");
+  expect(names).toContain("Atelier de Raph (Test)");
 
   // Vérifie que "Atelier de Claire" (qui est à plus de 50km) n'est PAS présent dans la liste
-  expect(names).not.toContain("Atelier de Claire");
+  expect(names).not.toContain("Atelier de Claire (Test)");
 });
 
 // Après tous les tests, on ferme la connexion à la base de données
