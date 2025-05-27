@@ -6,7 +6,7 @@ const { checkBody } = require("../modules/checkBody");
 
 const Users = require("../models/users");
 
-router.put("/update", (req, res) => {
+router.post("/create", (req, res) => {
   const { token, subscriptionType, count, price } = req.body;
 
   if (!checkBody(req.body, ["token", "subscriptionType", "count", "price"])) {
@@ -28,7 +28,7 @@ router.put("/update", (req, res) => {
       const calculatedEndDate = new Date(now);
       calculatedEndDate.setMonth(calculatedEndDate.getMonth() + durationMonth);
 
-      // Mise à jour du sous-document subscription
+      // Remplissage des champs du sous-document subscription
       user.subscription = user.subscription || {}; // S'assure que le sous-document subscription existe (sinon on l'initialise à un objet vide)
       user.subscription.subscriptionType = subscriptionType;
       user.subscription.createdAt = createdAt;
