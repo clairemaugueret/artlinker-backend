@@ -69,6 +69,10 @@ const usersSchema = mongoose.Schema({
     document: String,
     expirationDate: Date,
   },
+  proofOfResidency: {
+    document: String,
+    expirationDate: Date,
+  },
   civilLiabilityCertificate: {
     document: String,
     expirationDate: Date,
