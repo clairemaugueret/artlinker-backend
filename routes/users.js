@@ -49,11 +49,12 @@ router.post("/signup", (req, res) => {
           address: req.body.address || "",
           avatar: null,
           favoriteItems: [],
-          subscription: null,
+          subscription: {},
           ongoingLoans: [],
           previousLoans: [],
-          identityCard: null,
-          civilLiabilityCertificate: null,
+          identityCard: {},
+          proofOfResidency: {},
+          civilLiabilityCertificate: {},
         });
 
         newUser.save().then((newDoc) => {

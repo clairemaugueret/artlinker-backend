@@ -56,7 +56,6 @@ router.get("/:author", (req, res) => {
     .populate("artothequePlace")
     .then((data) => {
       if (data.length > 1) {
-        console.log("data", data);
         res.json({ result: true, worksList: data });
       } else {
         res.json({
@@ -118,6 +117,65 @@ router.post("/createloan", async (req, res) => {
     console.error("Error in /createloan:", err);
     res.status(500).json({ result: false, error: "Internal server error" });
   }
+});
+
+// CLAIRE
+// route fin d'un prêt
+router.post("/endloan", (req, res) => {
+  const { token, artitemId } = req.body;
+
+  // On cherche l'utilisateur correspondant au token
+  User.findOne({ token })
+    .then((user) => {
+      if (!user) {
+        return res.json({ result: false, error: "User not found" });
+      }
+
+      // On cherche dans le tableau ongoingLoans du user l’emprunt qui correspond à l'oeuvre
+      const loanIndex = user.ongoingLoans.findIndex(
+        (loan) => loan.artItem.toString() === artitemId
+      );
+
+      // Si l'oeuvre n’est pas trouvée dans les prêts en cours, on retourne une erreur
+      if (loanIndex === -1) {
+        return res.json({
+          result: false,
+          error: "Loan not found in ongoingLoans",
+        });
+      }
+
+      // On extrait le prêt terminé de ongoingLoans
+      const endedLoan = user.ongoingLoans.splice(loanIndex, 1)[0];
+
+      // On marque le prépare avant de le push dans le previousLoans du user
+      endedLoan.requestStatus = "LOAN_DONE";
+      endedLoan.endDate = new Date();
+      user.previousLoans.push(endedLoan);
+
+      return user.save();
+    })
+    .then(() => {
+      // Une fois l’utilisateur mis à jour, on met à jour l'oeuvre concernée (pour la rendre à nouveau disponible)
+      return Artitems.findById(artitemId);
+    })
+    .then((artitem) => {
+      if (!artitem) {
+        return res.json({ result: false, error: "Art item not found" });
+      }
+
+      // On rend l’oeuvre disponible à nouveau
+      artitem.disponibility = true;
+      artitem.expectedReturnDate = "";
+
+      return artitem.save();
+    })
+    .then(() => {
+      res.json({ result: true, message: "Loan ended successfully" });
+    })
+    .catch((err) => {
+      console.error("Error in /endloan:", err);
+      res.status(500).json({ result: false, error: "Internal server error" });
+    });
 });
 
 module.exports = router;

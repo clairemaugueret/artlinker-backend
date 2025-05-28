@@ -7,7 +7,7 @@ const loansSchema = mongoose.Schema({
     ref: "artitems",
   },
   startDate: Date,
-  requestedStatus: {
+  requestStatus: {
     type: String,
     enum: [
       // option enum dans le schéma Mongoose pour restreindre les valeurs acceptées pour le champ
@@ -25,7 +25,6 @@ const loansSchema = mongoose.Schema({
       "RETURN_CONDITION_REPORT", // Etat des lieux retour
       "LOAN_DONE", // Etat des lieux validé, emprunt terminé
     ],
-    required: true,
   },
   isExtendedLoan: Boolean,
   loanPhotos: [String],
