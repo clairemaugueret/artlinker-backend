@@ -10,7 +10,6 @@ const Users = require("../models/users");
 const Artitems = require("../models/artitems");
 const Places = require("../models/places");
 
-<<<<<<< HEAD
 //POUR RECEPTION FICHIER ET STOCKAGE DANS CLOUDINARY
 const uniqid = require("uniqid");
 const cloudinary = require("cloudinary").v2;
@@ -19,11 +18,10 @@ const fs = require("fs");
 //Ci-dessous import nécessaire pour changer les routes back-end à ce moment-là
 const streamifier = require("streamifier");
 
-=======
 const EMAIL_REGEX =
   /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const PHONE_REGEX = /^(\+?\d{1,3}[-.\s]?)?(\d{10})$/;
->>>>>>> d8b70e35f8f57405f418ad07f4cdfb35c135e562
+
 //CLAIRE
 // ROUTE signup
 // required body fields: firstname, lastname, email, password
