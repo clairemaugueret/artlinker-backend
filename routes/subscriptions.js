@@ -1,58 +1,76 @@
 //RAPHAEL
-var express = require("express");
-var router = express.Router();
+const express = require("express");
+const router = express.Router();
+const axios = require("axios");
+const Users = require("../models/users"); // Assurez-vous que le chemin est correct
 
-const { checkBody } = require("../modules/checkBody");
+router.post("/create", async (req, res) => {
+  try {
+    const { token, subscriptionType, count, price } = req.body;
 
-const Users = require("../models/users");
+    if (!token || !subscriptionType || !count || !price) {
+      res.json({ result: false, error: "Champs vides ou manquants." });
+      return;
+    }
 
-router.post("/create", (req, res) => {
-  const { token, subscriptionType, count, price } = req.body;
+    const user = await Users.findOne({ token });
+    if (!user) {
+      res.json({ result: false, error: "Utilisateur non trouvé." });
+      return;
+    }
 
-  if (!checkBody(req.body, ["token", "subscriptionType", "count", "price"])) {
-    res.json({ result: false, error: "Champs vides ou manquants." });
-    return;
-  }
+    // Calcul des dates
+    const now = new Date();
+    const durationMonth = 12;
+    const createdAt = now;
+    const calculatedEndDate = new Date(now);
+    calculatedEndDate.setMonth(calculatedEndDate.getMonth() + durationMonth);
 
-  Users.findOne({ token })
-    .then((user) => {
-      if (!user) {
-        res.json({ result: false, error: "Utilisateur non trouvé." });
-        return;
+    // Envoi d'une requête vers la route de paiement en utilisant axios (équivalent simplifié des fetch)
+    const paymentResponse = await axios.post(
+      "http://localhost:3000/payments/create-subscription",
+      {
+        email: user.email,
+        subscriptionType,
+        price,
       }
+    );
 
-      // Calcul des dates
-      const now = new Date();
-      const durationMonth = 12;
-      const createdAt = now;
-      const calculatedEndDate = new Date(now);
-      calculatedEndDate.setMonth(calculatedEndDate.getMonth() + durationMonth);
+    // Mise à jour de l'abonnement de l'utilisateur
+    user.subscription = {
+      subscriptionType,
+      createdAt,
+      worksCount: count,
+      price,
+      durationMonth,
+      calculatedEndDate,
+      stripeSubscriptionId: paymentResponse.data.subscriptionId,
+    };
 
-      // Remplissage des champs du sous-document subscription
-      user.subscription = user.subscription || {}; // S'assure que le sous-document subscription existe (sinon on l'initialise à un objet vide)
-      user.subscription.subscriptionType = subscriptionType;
-      user.subscription.createdAt = createdAt;
-      user.subscription.worksCount = count;
-      user.subscription.price = price;
-      user.subscription.durationMonth = durationMonth;
-      user.subscription.calculatedEndDate = calculatedEndDate;
+    await user.save();
 
-      user
-        .save()
-        .then(() => {
-          res.json({ result: true, message: "Abonnement mis à jour." });
-        })
-        .catch((err) => {
-          console.error("Erreur lors de la sauvegarde :", err);
-          res
-            .status(500)
-            .json({ result: false, error: "Erreur lors de la sauvegarde." });
-        });
-    })
-    .catch((err) => {
-      console.error("Erreur lors de la recherche de l'utilisateur :", err);
-      res.status(500).json({ result: false, error: "Erreur serveur." });
+    // Construction de l'objet subscriptionDetails à renvoyer au front
+    const subscriptionDetails = {
+      id: user.subscription._id,
+      type: subscriptionType,
+      worksCount: count,
+      price: price,
+      startDate: createdAt,
+      endDate: calculatedEndDate,
+      status: "active",
+      stripeSubscriptionId: paymentResponse.data.subscriptionId,
+    };
+
+    // Renvoi de la réponse vers le front
+    res.json({
+      success: true,
+      subscriptionDetails,
+      clientSecret: paymentResponse.data.clientSecret,
     });
+  } catch (error) {
+    console.error("Erreur lors de la création de l'abonnement:", error);
+    res.status(400).json({ error: error.message });
+  }
 });
 
 module.exports = router;

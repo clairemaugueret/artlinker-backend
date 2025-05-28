@@ -12,6 +12,7 @@ var usersRouter = require("./routes/users");
 var artitemsRouter = require("./routes/artitems");
 var placesRouter = require("./routes/places");
 var subscriptionsRouter = require("./routes/subscriptions");
+var paymentsRouter = require("./routes/payments");
 
 var app = express();
 const cors = require("cors");
@@ -27,6 +28,10 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/artitems", artitemsRouter);
 app.use("/places", placesRouter);
+app.use("/payments", paymentsRouter);
 app.use("/subscriptions", subscriptionsRouter);
+
+const StripeSecretKey = process.env.SECRET_KEY_STRIPE;
+const stripe = require("stripe")(StripeSecretKey);
 
 module.exports = app;
