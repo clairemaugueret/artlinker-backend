@@ -1,6 +1,6 @@
 var express = require("express");
 var router = express.Router();
-
+require("dotenv").config();
 require("../models/connection");
 const { getUpdatedFields } = require("../modules/getUpdatedFields");
 const { checkBody } = require("../modules/checkBody");
@@ -9,6 +9,10 @@ const uid2 = require("uid2");
 const Users = require("../models/users");
 const Artitems = require("../models/artitems");
 const Places = require("../models/places");
+// const cloudinary = require("cloudinary").v2;
+// cloudinary.config({
+//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+// });
 
 //POUR RECEPTION FICHIER ET STOCKAGE DANS CLOUDINARY
 const uniqid = require("uniqid");
@@ -254,43 +258,61 @@ router.put("/update", (req, res) => {
 //FATOUMATA
 //ROUTE update user avatar
 router.put("/updateAvatar", (req, res) => {
-  if (!req.body.token || !req.body.avatar) {
+  const token = req.body.token; // Le token de l'utilisateur
+  const avatar = req.files?.avatar; // L'avatar envoyé depuis le frontend
+  if (!token || !avatar) {
     return res
       .status(400)
       .json({ result: false, error: "Token et avatar requis" });
   }
 
-  Users.updateOne(
-    { token: req.body.token },
-    { $set: { avatar: req.body.avatar } }
-  )
-    .then(({ modifiedCount }) => {
-      if (modifiedCount === 0) {
-        return res.json({
-          result: false,
-          message: "Aucun changement détecté.",
-        });
+  const uniqueFileName = `avatar_${uniqid()}`;
+
+  const uploadStream = cloudinary.uploader.upload_stream(
+    {
+      folder: "ArtLinkerAvatars",
+      public_id: uniqueFileName,
+      resource_type: "image",
+    },
+    (error, result) => {
+      if (error || !result) {
+        return res
+          .status(500)
+          .json({ result: false, error: "Échec de l'upload Cloudinary" });
       }
-      // Retourne l'utilisateur mis à jour
-      Users.findOne({ token: req.body.token })
-        .then((updatedUser) => {
-          res.json({
-            result: true,
-            message: "Avatar modifié !",
-            userInfo: updatedUser,
-          });
+
+      Users.updateOne({ token }, { $set: { avatar: result.secure_url } })
+        .then(({ modifiedCount }) => {
+          if (modifiedCount === 0) {
+            return res.json({
+              result: false,
+              message: "Aucun changement détecté.",
+            });
+          }
+          Users.findOne({ token })
+            .then((updatedUser) => {
+              res.json({
+                result: true,
+                message: "Avatar modifié !",
+                userInfo: updatedUser,
+              });
+            })
+            .catch((err) => {
+              res.status(500).json({
+                result: false,
+                error: "Erreur lors de la récupération utilisateur",
+              });
+            });
         })
         .catch((err) => {
-          console.error("Error fetching updated user:", err);
-          res
-            .status(500)
-            .json({ result: false, error: "Internal server error" });
+          res.status(500).json({
+            result: false,
+            error: "Erreur lors de la mise à jour utilisateur",
+          });
         });
-    })
-    .catch((err) => {
-      console.error("Error updating avatar:", err);
-      res.status(500).json({ result: false, error: "Internal server error" });
-    });
+    }
+  );
+  streamifier.createReadStream(avatar.data).pipe(uploadStream); // Envoye le contenu d’une image (stockée dans un buffer) directement vers Cloudinary sans créer de fichier temporaire sur le disque.
 });
 
 //CLAIRE
