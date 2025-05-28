@@ -10,6 +10,9 @@ const Users = require("../models/users");
 const Artitems = require("../models/artitems");
 const Places = require("../models/places");
 
+const EMAIL_REGEX =
+  /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+const PHONE_REGEX = /^(\+?\d{1,3}[-.\s]?)?(\d{10})$/;
 //CLAIRE
 // ROUTE signup
 // required body fields: firstname, lastname, email, password
@@ -161,6 +164,21 @@ router.put("/update", (req, res) => {
   if (!req.body.token) {
     return res.status(400).json({ result: false, error: "Token is required" });
   }
+
+  // Vérification du format email si l'email est présent dans la requête
+  if (req.body.email && !EMAIL_REGEX.test(req.body.email)) {
+    return res
+      .status(400)
+      .json({ result: false, error: "Format d'email invalide" });
+  }
+
+  // Vérification du format téléphone si le téléphone est présent dans la requête
+  if (req.body.phone && !PHONE_REGEX.test(req.body.phone)) {
+    return res
+      .status(400)
+      .json({ result: false, error: "Format de téléphone invalide" });
+  }
+
   // recherche de l'utilisateur
   Users.findOne({ token: req.body.token })
     .then((data) => {
@@ -170,11 +188,12 @@ router.put("/update", (req, res) => {
 
       //comparaison des données du body avec les infos de l'utilisateur dans la base de données
       const allowedFields = [
+        "email",
+        "password",
         "firstname",
         "lastname",
         "phone",
         "address",
-        "avatar",
       ];
       const updateData = getUpdatedFields(req.body, data, allowedFields);
       // Si les informations sont identiques, alors la base de données n'est pas mise à jour
@@ -183,17 +202,30 @@ router.put("/update", (req, res) => {
         return;
       }
       // Si une ou des informations sont différentes, la base de données est mise à jour
+      if (updateData.password) {
+        // Si le mot de passe est modifié, on le hash avant de l'enregistrer
+        updateData.password = bcrypt.hashSync(updateData.password, 10);
+      }
       Users.updateOne({ token: req.body.token }, { $set: updateData })
         .then(({ modifiedCount }) => {
           if (modifiedCount === 0) {
             res.json({ result: false, message: "Aucun changement détecté." }); // message qui pourra être affiché dans le frontend
           } else {
-            res.json({
-              result: true,
-              message: "Information(s) personnelle(s) modifiée(s).", // le message pourra être affiché dans le frontend
-              userInfo: updateData, // Ne renvoie que les champs modifiés (et pas la totalité des champs possibles)
-            });
-            // → à voir quand on sera sur l'écran si OK comme ça ou si préférable de tout renvoyer (et si on change d'avis, changer aussi TDD !!)
+            // Fetch the updated user document to return the latest data
+            Users.findOne({ token: req.body.token })
+              .then((updatedUser) => {
+                res.json({
+                  result: true,
+                  message: "Information(s) personnelle(s) modifiée(s).", // le message pourra être affiché dans le frontend
+                  userInfo: updatedUser, // Renvoie toutes les infos utilisateur à jour
+                });
+              })
+              .catch((err) => {
+                console.error("Error fetching updated user:", err);
+                res
+                  .status(500)
+                  .json({ result: false, error: "Internal server error" });
+              });
           }
         })
         .catch((err) => {
@@ -205,6 +237,48 @@ router.put("/update", (req, res) => {
     })
     .catch((err) => {
       console.error("Error fetching user:", err);
+      res.status(500).json({ result: false, error: "Internal server error" });
+    });
+});
+
+//FATOUMATA
+//ROUTE update user avatar
+router.put("/updateAvatar", (req, res) => {
+  if (!req.body.token || !req.body.avatar) {
+    return res
+      .status(400)
+      .json({ result: false, error: "Token et avatar requis" });
+  }
+
+  Users.updateOne(
+    { token: req.body.token },
+    { $set: { avatar: req.body.avatar } }
+  )
+    .then(({ modifiedCount }) => {
+      if (modifiedCount === 0) {
+        return res.json({
+          result: false,
+          message: "Aucun changement détecté.",
+        });
+      }
+      // Retourne l'utilisateur mis à jour
+      Users.findOne({ token: req.body.token })
+        .then((updatedUser) => {
+          res.json({
+            result: true,
+            message: "Avatar modifié !",
+            userInfo: updatedUser,
+          });
+        })
+        .catch((err) => {
+          console.error("Error fetching updated user:", err);
+          res
+            .status(500)
+            .json({ result: false, error: "Internal server error" });
+        });
+    })
+    .catch((err) => {
+      console.error("Error updating avatar:", err);
       res.status(500).json({ result: false, error: "Internal server error" });
     });
 });
