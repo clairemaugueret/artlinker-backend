@@ -333,7 +333,7 @@ router.put("/addidentitycard", async (req, res) => {
 
   //ADAPTATION DE L'ENVOI A CLOUDINARY UN PEU DIFFERENT DU COURS POUR DEJA POURVOIR FONCTIONNER QUAND ON AURA DEPLOYER
   //différence: on ne passe par un stockage temporaire dans le backend (car Vercel est serverless) mais on envoie en direct grâce au module streamifier
-  const uniqueFileName = `identityCard_${uniqid()}`;
+  const uniqueFileName = `identityCard_user-${token}_${uniqid()}`;
 
   const uploadStream = cloudinary.uploader.upload_stream(
     {
@@ -343,7 +343,7 @@ router.put("/addidentitycard", async (req, res) => {
     },
     (error, result) => {
       if (error || !result) {
-        res.json({ result: false, error: "Échec de l'upload Cloudinary" });
+        res.json({ result: false, error: "Échec de l'upload" });
         return;
       }
 
@@ -352,6 +352,118 @@ router.put("/addidentitycard", async (req, res) => {
         {
           "identityCard.document": result.secure_url,
           "identityCard.expirationDate": expirationDate,
+        },
+        { new: true }
+      )
+        .then((updatedUser) => {
+          if (!updatedUser) {
+            res.json({ result: false, error: "Utilisateur non trouvé" });
+          } else {
+            res.json({ result: true, user: updatedUser });
+          }
+        })
+        .catch((dbError) => {
+          res.json({ result: false, error: dbError.message });
+        });
+    }
+  );
+
+  streamifier.createReadStream(file.data).pipe(uploadStream);
+});
+
+//CLAIRE
+//ROUTE to put user update justificatif de domicile
+router.put("/addproofresidency", async (req, res) => {
+  const file = req.files?.userDocument;
+  const expirationDate = req.body.expirationDate;
+  const token = req.body.userToken;
+
+  if (!file || !expirationDate || !token) {
+    res.json({
+      result: false,
+      error:
+        "Fichier, date d'expiration ou identification de l'utilisateur manquant",
+    });
+    return;
+  }
+
+  //ADAPTATION DE L'ENVOI A CLOUDINARY UN PEU DIFFERENT DU COURS POUR DEJA POURVOIR FONCTIONNER QUAND ON AURA DEPLOYER
+  //différence: on ne passe par un stockage temporaire dans le backend (car Vercel est serverless) mais on envoie en direct grâce au module streamifier
+  const uniqueFileName = `proofOfResidency_user-${token}_${uniqid()}`;
+
+  const uploadStream = cloudinary.uploader.upload_stream(
+    {
+      folder: "ArtLinkerUsersDocuments",
+      public_id: uniqueFileName,
+      resource_type: "auto", // pdf ou image
+    },
+    (error, result) => {
+      if (error || !result) {
+        res.json({ result: false, error: "Échec de l'upload" });
+        return;
+      }
+
+      Users.findOneAndUpdate(
+        { token },
+        {
+          "proofOfResidency.document": result.secure_url,
+          "proofOfResidency.expirationDate": expirationDate,
+        },
+        { new: true }
+      )
+        .then((updatedUser) => {
+          if (!updatedUser) {
+            res.json({ result: false, error: "Utilisateur non trouvé" });
+          } else {
+            res.json({ result: true, user: updatedUser });
+          }
+        })
+        .catch((dbError) => {
+          res.json({ result: false, error: dbError.message });
+        });
+    }
+  );
+
+  streamifier.createReadStream(file.data).pipe(uploadStream);
+});
+
+//CLAIRE
+//ROUTE to put user update responsabilité civile
+router.put("/addcertificate", async (req, res) => {
+  const file = req.files?.userDocument;
+  const expirationDate = req.body.expirationDate;
+  const token = req.body.userToken;
+
+  if (!file || !expirationDate || !token) {
+    res.json({
+      result: false,
+      error:
+        "Fichier, date d'expiration ou identification de l'utilisateur manquant",
+    });
+    return;
+  }
+
+  //ADAPTATION DE L'ENVOI A CLOUDINARY UN PEU DIFFERENT DU COURS POUR DEJA POURVOIR FONCTIONNER QUAND ON AURA DEPLOYER
+  //différence: on ne passe par un stockage temporaire dans le backend (car Vercel est serverless) mais on envoie en direct grâce au module streamifier
+  const uniqueFileName = `civilLiabilityCertificate_user-${token}_${uniqid()}`;
+
+  const uploadStream = cloudinary.uploader.upload_stream(
+    {
+      folder: "ArtLinkerUsersDocuments",
+      public_id: uniqueFileName,
+      resource_type: "auto", // pdf ou image
+    },
+    (error, result) => {
+      if (error || !result) {
+        res.json({ result: false, error: "Échec de l'upload" });
+        return;
+      }
+
+      Users.findOneAndUpdate(
+        { token },
+        {
+          "civilLiabilityCertificate.document": result.secure_url,
+          "civilLiabilityCertificate.expirationDate": expirationDate,
         },
         { new: true }
       )
