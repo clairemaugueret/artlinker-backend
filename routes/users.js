@@ -12,6 +12,7 @@ const Places = require("../models/places");
 
 //POUR RECEPTION FICHIER ET STOCKAGE DANS CLOUDINARY
 const uniqid = require("uniqid");
+const path = require("path"); //module natif Node.js pour manipuler facilement et de façon fiable les chemins de fichiers et d’extensions
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 //Quand on déploiera le backend sur Vercel, il faudra changer les routes car Vercel n'a pas de disque persistant/temporaire comme quand on est en dev local sur notre PC
@@ -294,10 +295,10 @@ router.put("/updateAvatar", (req, res) => {
 
 //CLAIRE
 //ROUTE to put user update carte identité
-router.post("/addidentitycard", async (req, res) => {
+router.put("/addidentitycard", async (req, res) => {
   const file = req.files?.userDocument;
   const expirationDate = req.body.expirationDate;
-  const token = req.body.token;
+  const token = req.body.userToken;
 
   if (!file || !expirationDate || !token) {
     res.json({
@@ -308,81 +309,44 @@ router.post("/addidentitycard", async (req, res) => {
     return;
   }
 
-  //PARTIE A SUPPRIMER QUAND DEPLOIEMENT
-  const extension = file.name.split(".").pop();
-  const filePath = `./tmp/${uniqid()}.${extension}`;
+  //ADAPTATION DE L'ENVOI A CLOUDINARY UN PEU DIFFERENT DU COURS POUR DEJA POURVOIR FONCTIONNER QUAND ON AURA DEPLOYER
+  //différence: on ne passe par un stockage temporaire dans le backend (car Vercel est serverless) mais on envoie en direct grâce au module streamifier
+  const uniqueFileName = `identityCard_${uniqid()}`;
 
-  const resultMove = await file.mv(filePath);
-
-  if (!resultMove) {
-    const resultCloudinary = await cloudinary.uploader.upload(filePath, {
+  const uploadStream = cloudinary.uploader.upload_stream(
+    {
       folder: "ArtLinkerUsersDocuments",
-      resource_type: "auto",
-    });
+      public_id: uniqueFileName,
+      resource_type: "auto", // pdf ou image
+    },
+    (error, result) => {
+      if (error || !result) {
+        res.json({ result: false, error: "Échec de l'upload Cloudinary" });
+        return;
+      }
 
-    fs.unlinkSync(filePath);
+      Users.findOneAndUpdate(
+        { token },
+        {
+          "identityCard.document": result.secure_url,
+          "identityCard.expirationDate": expirationDate,
+        },
+        { new: true }
+      )
+        .then((updatedUser) => {
+          if (!updatedUser) {
+            res.json({ result: false, error: "Utilisateur non trouvé" });
+          } else {
+            res.json({ result: true, user: updatedUser });
+          }
+        })
+        .catch((dbError) => {
+          res.json({ result: false, error: dbError.message });
+        });
+    }
+  );
 
-    Users.findOneAndUpdate(
-      { token },
-      {
-        "identityCard.document": uploadResult.secure_url,
-        "identityCard.expirationDate": expirationDate,
-      },
-      { new: true }
-    )
-      .then((updatedUser) => {
-        if (!updatedUser) {
-          res.json({ result: false, error: "Utilisateur non trouvé" });
-        } else {
-          res.json({ result: true, user: updatedUser });
-        }
-      })
-      .catch((error) => {
-        res.json({ result: false, error: error });
-      });
-  } else {
-    res.json({ result: false, error: resultMove });
-  }
+  streamifier.createReadStream(file.data).pipe(uploadStream);
 });
-//FIN DE PARTIE A SUPPRIMER QUAND DEPLOIEMENT
-
-//PARTIE A DECOMMENTER QUAND DEPLOIEMENT
-//   const uniqueFileName = `identity_${uniqid()}`;
-
-//   const uploadStream = cloudinary.uploader.upload_stream(
-//     {
-//       folder: "ArtLinkerUsersDocuments",
-//       public_id: uniqueFileName,
-//       resource_type: "auto", // pdf ou image
-//     },
-//     (error, result) => {
-//       if (error || !result) {
-//         res.json({ result: false, error: "Échec de l'upload Cloudinary" });
-//         return;
-//       }
-
-//       Users.findOneAndUpdate(
-//         { token },
-//         {
-//           "identityCard.document": result.secure_url,
-//           "identityCard.expirationDate": expirationDate,
-//         },
-//         { new: true }
-//       )
-//         .then((updatedUser) => {
-//           if (!updatedUser) {
-//             res.json({ result: false, error: "Utilisateur non trouvé" });
-//           } else {
-//             res.json({ result: true, user: updatedUser });
-//           }
-//         })
-//         .catch((dbError) => {
-//           res.json({ result: false, error: dbError.message });
-//         });
-//     }
-//   );
-
-//   streamifier.createReadStream(file.data).pipe(uploadStream);
-// });
 
 module.exports = router;
