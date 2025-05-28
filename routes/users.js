@@ -9,10 +9,11 @@ const uid2 = require("uid2");
 const Users = require("../models/users");
 const Artitems = require("../models/artitems");
 const Places = require("../models/places");
-
+const cloudinary = require("cloudinary").v2;
 const EMAIL_REGEX =
   /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const PHONE_REGEX = /^(\+?\d{1,3}[-.\s]?)?(\d{10})$/;
+
 //CLAIRE
 // ROUTE signup
 // required body fields: firstname, lastname, email, password
