@@ -252,22 +252,6 @@ router.put("/update", (req, res) => {
     });
 });
 
-//CLAIRE
-//ROUTE to put user update carte identité
-router.post("/addidentitycard", async (req, res) => {
-  const file = req.files?.userDocument;
-  const expirationDate = req.body.expirationDate;
-  const token = req.body.token;
-
-  if (!file || !expirationDate || !token) {
-    res.json({
-      result: false,
-      error:
-        "Fichier, date d'expiration ou identification de l'utilisateur manquant",
-    });
-    return;
-  }
-
 //FATOUMATA
 //ROUTE update user avatar
 router.put("/updateAvatar", (req, res) => {
@@ -310,6 +294,22 @@ router.put("/updateAvatar", (req, res) => {
     });
 });
 
+//CLAIRE
+//ROUTE to put user update carte identité
+router.post("/addidentitycard", async (req, res) => {
+  const file = req.files?.userDocument;
+  const expirationDate = req.body.expirationDate;
+  const token = req.body.token;
+
+  if (!file || !expirationDate || !token) {
+    res.json({
+      result: false,
+      error:
+        "Fichier, date d'expiration ou identification de l'utilisateur manquant",
+    });
+    return;
+  }
+
   //PARTIE A SUPPRIMER QUAND DEPLOIEMENT
   const extension = file.name.split(".").pop();
   const filePath = `./tmp/${uniqid()}.${extension}`;
@@ -317,7 +317,10 @@ router.put("/updateAvatar", (req, res) => {
   const resultMove = await file.mv(filePath);
 
   if (!resultMove) {
-    const resultCloudinary = await cloudinary.uploader.upload(filePath);
+    const resultCloudinary = await cloudinary.uploader.upload(filePath, {
+      folder: "ArtLinkerUsersDocuments",
+      resource_type: "auto",
+    });
 
     fs.unlinkSync(filePath);
 
@@ -350,7 +353,7 @@ router.put("/updateAvatar", (req, res) => {
 
 //   const uploadStream = cloudinary.uploader.upload_stream(
 //     {
-//       folder: "UsersDocuments",
+//       folder: "ArtLinkerUsersDocuments",
 //       public_id: uniqueFileName,
 //       resource_type: "auto", // pdf ou image
 //     },
