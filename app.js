@@ -14,6 +14,10 @@ var placesRouter = require("./routes/places");
 var subscriptionsRouter = require("./routes/subscriptions");
 
 var app = express();
+
+const fileUpload = require("express-fileupload");
+app.use(fileUpload());
+
 const cors = require("cors");
 app.use(cors());
 

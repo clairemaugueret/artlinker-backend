@@ -10,6 +10,14 @@ const Users = require("../models/users");
 const Artitems = require("../models/artitems");
 const Places = require("../models/places");
 
+//POUR RECEPTION FICHIER ET STOCKAGE DANS CLOUDINARY
+const uniqid = require("uniqid");
+const cloudinary = require("cloudinary").v2;
+const fs = require("fs");
+//Quand on déploiera le backend sur Vercel, il faudra changer les routes car Vercel n'a pas de disque persistant/temporaire comme quand on est en dev local sur notre PC
+//Ci-dessous import nécessaire pour changer les routes back-end à ce moment-là
+const streamifier = require("streamifier");
+
 //CLAIRE
 // ROUTE signup
 // required body fields: firstname, lastname, email, password
@@ -208,5 +216,95 @@ router.put("/update", (req, res) => {
       res.status(500).json({ result: false, error: "Internal server error" });
     });
 });
+
+//CLAIRE
+//ROUTE to put user update carte identité
+router.post("/addidentitycard", async (req, res) => {
+  const file = req.files?.userDocument;
+  const expirationDate = req.body.expirationDate;
+  const token = req.body.token;
+
+  if (!file || !expirationDate || !token) {
+    res.json({
+      result: false,
+      error:
+        "Fichier, date d'expiration ou identification de l'utilisateur manquant",
+    });
+    return;
+  }
+
+  //PARTIE A SUPPRIMER QUAND DEPLOIEMENT
+  const extension = file.name.split(".").pop();
+  const filePath = `./tmp/${uniqid()}.${extension}`;
+
+  const resultMove = await file.mv(filePath);
+
+  if (!resultMove) {
+    const resultCloudinary = await cloudinary.uploader.upload(filePath);
+
+    fs.unlinkSync(filePath);
+
+    Users.findOneAndUpdate(
+      { token },
+      {
+        "identityCard.document": uploadResult.secure_url,
+        "identityCard.expirationDate": expirationDate,
+      },
+      { new: true }
+    )
+      .then((updatedUser) => {
+        if (!updatedUser) {
+          res.json({ result: false, error: "Utilisateur non trouvé" });
+        } else {
+          res.json({ result: true, user: updatedUser });
+        }
+      })
+      .catch((error) => {
+        res.json({ result: false, error: error });
+      });
+  } else {
+    res.json({ result: false, error: resultMove });
+  }
+});
+//FIN DE PARTIE A SUPPRIMER QUAND DEPLOIEMENT
+
+//PARTIE A DECOMMENTER QUAND DEPLOIEMENT
+//   const uniqueFileName = `identity_${uniqid()}`;
+
+//   const uploadStream = cloudinary.uploader.upload_stream(
+//     {
+//       folder: "UsersDocuments",
+//       public_id: uniqueFileName,
+//       resource_type: "auto", // pdf ou image
+//     },
+//     (error, result) => {
+//       if (error || !result) {
+//         res.json({ result: false, error: "Échec de l'upload Cloudinary" });
+//         return;
+//       }
+
+//       Users.findOneAndUpdate(
+//         { token },
+//         {
+//           "identityCard.document": result.secure_url,
+//           "identityCard.expirationDate": expirationDate,
+//         },
+//         { new: true }
+//       )
+//         .then((updatedUser) => {
+//           if (!updatedUser) {
+//             res.json({ result: false, error: "Utilisateur non trouvé" });
+//           } else {
+//             res.json({ result: true, user: updatedUser });
+//           }
+//         })
+//         .catch((dbError) => {
+//           res.json({ result: false, error: dbError.message });
+//         });
+//     }
+//   );
+
+//   streamifier.createReadStream(file.data).pipe(uploadStream);
+// });
 
 module.exports = router;
