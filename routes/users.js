@@ -259,19 +259,20 @@ router.put("/update", (req, res) => {
 //FATOUMATA
 //ROUTE update user avatar
 router.put("/updateAvatar", (req, res) => {
-  const token = req.body.token; // Le token de l'utilisateur
-  const avatar = req.files?.avatar; // L'avatar envoyé depuis le frontend
+  const token = req.body.token;
+  const avatar = req.files?.avatar;
+
   if (!token || !avatar) {
     return res
       .status(400)
       .json({ result: false, error: "Token et avatar requis" });
   }
 
-  const uniqueFileName = `avatar_${uniqid()}`;
+  const uniqueFileName = `user-${token}_avatar_${uniqid()}`;
 
   const uploadStream = cloudinary.uploader.upload_stream(
     {
-      folder: "ArtLinkerAvatars",
+      folder: "ArtLinkerUsersAvatars",
       public_id: uniqueFileName,
       resource_type: "image",
     },
@@ -283,37 +284,40 @@ router.put("/updateAvatar", (req, res) => {
       }
 
       Users.updateOne({ token }, { $set: { avatar: result.secure_url } })
-        .then(({ modifiedCount }) => {
-          if (modifiedCount === 0) {
-            return res.json({
+        .then((updateResult) => {
+          if (updateResult.modifiedCount === 0) {
+            return res.status(404).json({
               result: false,
-              message: "Aucun changement détecté.",
+              error: "Utilisateur non trouvé ou avatar non modifié",
             });
           }
-          Users.findOne({ token })
-            .then((updatedUser) => {
-              res.json({
-                result: true,
-                message: "Avatar modifié !",
-                userInfo: updatedUser,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
+
+          // Renvoie les infos mises à jour pour rafraîchir le frontend
+          Users.findOne({ token }).then((userInfo) => {
+            if (!userInfo) {
+              return res.status(404).json({
                 result: false,
-                error: "Erreur lors de la récupération utilisateur",
+                error: "Utilisateur introuvable après la mise à jour",
               });
+            }
+
+            res.json({
+              result: true,
+              message: "Avatar mis à jour avec succès",
+              userInfo,
             });
+          });
         })
         .catch((err) => {
-          res.status(500).json({
-            result: false,
-            error: "Erreur lors de la mise à jour utilisateur",
-          });
+          res
+            .status(500)
+            .json({ result: false, error: "Erreur lors de la mise à jour" });
         });
     }
   );
-  streamifier.createReadStream(avatar.data).pipe(uploadStream); // Envoye le contenu d’une image (stockée dans un buffer) directement vers Cloudinary sans créer de fichier temporaire sur le disque.
+
+  // Important : envoyer le flux de l'image à Cloudinary
+  streamifier.createReadStream(avatar.data).pipe(uploadStream);
 });
 
 //CLAIRE
@@ -334,7 +338,7 @@ router.put("/addidentitycard", async (req, res) => {
 
   //ADAPTATION DE L'ENVOI A CLOUDINARY UN PEU DIFFERENT DU COURS POUR DEJA POURVOIR FONCTIONNER QUAND ON AURA DEPLOYER
   //différence: on ne passe par un stockage temporaire dans le backend (car Vercel est serverless) mais on envoie en direct grâce au module streamifier
-  const uniqueFileName = `identityCard_user-${token}_${uniqid()}`;
+  const uniqueFileName = `user-${token}_identityCard_${uniqid()}`;
 
   const uploadStream = cloudinary.uploader.upload_stream(
     {
@@ -390,7 +394,7 @@ router.put("/addproofresidency", async (req, res) => {
 
   //ADAPTATION DE L'ENVOI A CLOUDINARY UN PEU DIFFERENT DU COURS POUR DEJA POURVOIR FONCTIONNER QUAND ON AURA DEPLOYER
   //différence: on ne passe par un stockage temporaire dans le backend (car Vercel est serverless) mais on envoie en direct grâce au module streamifier
-  const uniqueFileName = `proofOfResidency_user-${token}_${uniqid()}`;
+  const uniqueFileName = `user-${token}_proofOfResidency_${uniqid()}`;
 
   const uploadStream = cloudinary.uploader.upload_stream(
     {
@@ -446,7 +450,7 @@ router.put("/addcertificate", async (req, res) => {
 
   //ADAPTATION DE L'ENVOI A CLOUDINARY UN PEU DIFFERENT DU COURS POUR DEJA POURVOIR FONCTIONNER QUAND ON AURA DEPLOYER
   //différence: on ne passe par un stockage temporaire dans le backend (car Vercel est serverless) mais on envoie en direct grâce au module streamifier
-  const uniqueFileName = `civilLiabilityCertificate_user-${token}_${uniqid()}`;
+  const uniqueFileName = `user-${token}_civilLiabilityCertificate_${uniqid()}`;
 
   const uploadStream = cloudinary.uploader.upload_stream(
     {
