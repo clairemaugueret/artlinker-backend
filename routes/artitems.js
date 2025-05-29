@@ -88,7 +88,7 @@ router.post("/createloan", async (req, res) => {
         ongoingLoans: {
           artItem: req.body.artitemId,
           startDate: new Date(),
-          requestStatus: "INIT_DEMAND_DISPO",
+          requestStatus: "LOAN_ONGOING", //changer le statut à la création de l'emprunt quand il y aura la communication avec le site ArtLinker pour passer par une étape de validation de demande d'emprunt
           isExtendedLoan: false,
           loanPhotos: [],
           returnPhotos: [],
