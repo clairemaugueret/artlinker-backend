@@ -1,54 +1,62 @@
 const express = require("express");
 const router = express.Router();
+console.log("Stripe API Key:", process.env.STRIPE_SECRET_KEY);
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+console.log("Après l'initialisation de Stripe");
 
-router.post("/create-subscription", async (req, res) => {
+// Route pour créer un customer
+router.post("/create-customer", async (req, res) => {
   try {
-    // Extraction des données envoyées depuis subscriptions.js
-    const { email, subscriptionType, price } = req.body;
+    // On récupère l'email et le nom envoyés dans le body de la requête
+    const { email, name } = req.body;
 
-    // Vérification que toutes les données nécessaires sont présentes
-    if (!email || !subscriptionType || !price) {
-      return res.status(400).json({ error: "Données manquantes" });
-    }
-
-    // 1. Création ou récupération d'un client Stripe
-    // Cela permet de lier l'abonnement à un client spécifique dans Stripe
-    let customer = await stripe.customers.create({
-      email: email,
-      // Vous pouvez ajouter d'autres détails du client ici si nécessaire
+    // Création du client Stripe avec les informations fournies
+    const customer = await stripe.customers.create({
+      email: email, // Email du client
+      name: name, // Nom du client
+      // Possibilité d'ajouter d'autres paramètres comme l'adresse, le téléphone, etc.
     });
 
-    // 2. Création de l'abonnement Stripe
-    const subscription = await stripe.subscriptions.create({
-      customer: customer.id, // Lie l'abonnement au client créé
-      items: [
-        {
-          // Utilise une fonction helper pour obtenir l'ID de prix Stripe correspondant au type d'abonnement
-          price: getPriceIdForSubscriptionType(subscriptionType),
-        },
-      ],
-      // Permet de confirmer le paiement côté client, utile pour l'authentification 3D Secure
-      payment_behavior: "default_incomplete",
-      // Inclut les détails de la facture et de l'intention de paiement dans la réponse
-      expand: ["latest_invoice.payment_intent"],
-      // Ajoute des métadonnées personnalisées à l'abonnement pour un suivi facile
-      metadata: {
-        subscriptionType: subscriptionType,
-        price: price,
-      },
-    });
-
-    // 3. Préparation de la réponse à envoyer au client
-    res.json({
-      subscriptionId: subscription.id, // ID unique de l'abonnement créé
-      // Client secret nécessaire pour finaliser le paiement côté client
-      clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+    // On renvoie au front l'ID du client créé ainsi que ses informations principales
+    res.status(200).json({
+      customerId: customer.id, // Identifiant Stripe du client
+      email: customer.email, // Email du client
+      name: customer.name, // Nom du client
     });
   } catch (error) {
-    // Gestion des erreurs
-    console.error("Erreur lors de la création de l'abonnement:", error);
-    res.status(400).json({ error: error.message });
+    // En cas d'erreur, on renvoie un message d'erreur au front
+    res.status(400).json({ error: { message: error.message } });
+  }
+});
+
+// Route pour créer un abonnement
+router.post("/create-subscription", async (req, res) => {
+  // On récupère le customerId et le priceId envoyés dans le body de la requête
+  const { customerId, priceId } = req.body;
+
+  try {
+    // Création de l'abonnement Stripe avec les paramètres nécessaires
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId, // L'identifiant du client Stripe à abonner
+      items: [
+        {
+          price: priceId, // L'identifiant du prix Stripe correspondant à l'abonnement choisi
+        },
+      ],
+      payment_behavior: "default_incomplete", // Permet de créer l'abonnement sans valider le paiement immédiatement (utile pour SCA/3D Secure)
+      payment_settings: { save_default_payment_method: "on_subscription" }, // Sauvegarde la méthode de paiement pour les paiements futurs de cet abonnement
+      expand: ["latest_invoice.confirmation_secret"], // Permet de récupérer le client_secret pour confirmer le paiement côté front
+    });
+
+    // On renvoie au front l'ID de l'abonnement et le clientSecret pour la confirmation du paiement
+    res.status(200).json({
+      subscriptionId: subscription.id,
+      clientSecret:
+        subscription.latest_invoice.confirmation_secret.client_secret,
+    });
+  } catch (error) {
+    // En cas d'erreur, on renvoie un message d'erreur au front
+    res.status(400).json({ error: { message: error.message } });
   }
 });
 

@@ -31,7 +31,7 @@ app.use("/places", placesRouter);
 app.use("/payments", paymentsRouter);
 app.use("/subscriptions", subscriptionsRouter);
 
-const StripeSecretKey = process.env.SECRET_KEY_STRIPE;
-const stripe = require("stripe")(StripeSecretKey);
+//const StripeSecretKey = process.env.SECRET_KEY_STRIPE;
+//const stripe = require("stripe")(StripeSecretKey);
 
 module.exports = app;

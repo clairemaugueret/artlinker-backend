@@ -15,7 +15,7 @@
     "express": "~4.16.1",
     "mongoose": "^8.15.0",
     "morgan": "~1.9.1",
-    "stripe": "^18.1.1",
+    "stripe": "^18.2.0",
     "uid2": "^1.0.0"
   },
   "devDependencies": {

@@ -1,7 +1,7 @@
 //RAPHAEL
 const express = require("express");
 const router = express.Router();
-const axios = require("axios");
+// const axios = require("axios");
 const Users = require("../models/users"); // Assurez-vous que le chemin est correct
 
 router.post("/create", async (req, res) => {
@@ -27,14 +27,14 @@ router.post("/create", async (req, res) => {
     calculatedEndDate.setMonth(calculatedEndDate.getMonth() + durationMonth);
 
     // Envoi d'une requête vers la route de paiement en utilisant axios (équivalent simplifié des fetch)
-    const paymentResponse = await axios.post(
-      "http://localhost:3000/payments/create-subscription",
-      {
-        email: user.email,
-        subscriptionType,
-        price,
-      }
-    );
+    // const paymentResponse = await axios.post(
+    //   "http://localhost:3000/payments/create-subscription",
+    //   {
+    //     email: user.email,
+    //     subscriptionType,
+    //     price,
+    //   }
+    // );
 
     // Mise à jour de l'abonnement de l'utilisateur
     user.subscription = {
