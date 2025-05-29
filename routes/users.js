@@ -68,7 +68,7 @@ router.post("/signup", (req, res) => {
             firstname: newDoc.firstname,
             lastname: newDoc.lastname,
             favoriteItems: newDoc.favoriteItems,
-            hasSubcribed: false,
+            hasSubscribed: false,
             authorisedLoans: 0,
             ongoingLoans: 0,
           };
@@ -113,12 +113,12 @@ router.post("/signin", (req, res) => {
 
         if (data.subscription?.subscriptionType) {
           // Check if the user has a subscription
-          userInfo.hasSubcribed = true;
+          userInfo.hasSubscribed = true;
           userInfo.authorisedLoans = data.subscription.worksCount;
           userInfo.ongoingLoans = data.ongoingLoans.length;
         } else {
           // If the user does not have a subscription
-          userInfo.hasSubcribed = false;
+          userInfo.hasSubscribed = false;
           userInfo.authorisedLoans = 0;
           userInfo.ongoingLoans = 0;
         }

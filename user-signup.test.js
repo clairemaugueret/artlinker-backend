@@ -64,7 +64,7 @@ it("POST /users/signup", async () => {
   expect(res.body.userInfo).toHaveProperty("lastname", "User");
   expect(res.body.userInfo).toHaveProperty("favoriteItems");
   expect(Array.isArray(res.body.userInfo.favoriteItems)).toBe(true);
-  expect(res.body.userInfo).toHaveProperty("hasSubcribed", false);
+  expect(res.body.userInfo).toHaveProperty("hasSubscribed", false);
   expect(res.body.userInfo).toHaveProperty("authorisedLoans", 0);
   expect(res.body.userInfo).toHaveProperty("ongoingLoans", 0);
 });

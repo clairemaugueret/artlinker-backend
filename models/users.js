@@ -7,6 +7,7 @@ const loansSchema = mongoose.Schema({
     ref: "artitems",
   },
   startDate: Date,
+  endDate: Date,
   requestStatus: {
     type: String,
     enum: [

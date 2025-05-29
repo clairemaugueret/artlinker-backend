@@ -192,7 +192,7 @@ it("POST /users/signin - subcription true", async () => {
   expect(Array.isArray(response.body.userInfo.favoriteItems)).toBe(true);
   expect(response.body.userInfo.authorisedLoans).toBe(3);
   expect(response.body.userInfo.ongoingLoans).toBe(0);
-  expect(response.body.userInfo.hasSubcribed).toBe(true);
+  expect(response.body.userInfo.hasSubscribed).toBe(true);
 });
 
 //test valid user - subcription false
@@ -211,7 +211,7 @@ it("POST /users/signin - subcription false", async () => {
   expect(Array.isArray(response.body.userInfo.favoriteItems)).toBe(true);
   expect(response.body.userInfo.authorisedLoans).toBe(0);
   expect(response.body.userInfo.ongoingLoans).toBe(0);
-  expect(response.body.userInfo.hasSubcribed).toBe(false);
+  expect(response.body.userInfo.hasSubscribed).toBe(false);
 });
 
 // Test invalid user - wrong password
