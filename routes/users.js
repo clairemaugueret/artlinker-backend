@@ -9,18 +9,18 @@ const uid2 = require("uid2");
 const Users = require("../models/users");
 const Artitems = require("../models/artitems");
 const Places = require("../models/places");
-// const cloudinary = require("cloudinary").v2;
-// cloudinary.config({
-//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-// });
 
 //POUR RECEPTION FICHIER ET STOCKAGE DANS CLOUDINARY
 const uniqid = require("uniqid");
 const path = require("path"); //module natif Node.js pour manipuler facilement et de façon fiable les chemins de fichiers et d’extensions
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
-//Quand on déploiera le backend sur Vercel, il faudra changer les routes car Vercel n'a pas de disque persistant/temporaire comme quand on est en dev local sur notre PC
-//Ci-dessous import nécessaire pour changer les routes back-end à ce moment-là
+
+//Avec un backend déployé sur Vercel, les routes ne peuvent pas faire appel à stockage temporaire dans le backend le temps de l'upload vers Cloudinary
+// Le module 'streamifier' permet de convertir un buffer (comme un fichier uploadé via express-fileupload) en flux lisible (readable stream).
+// Cela est utile pour envoyer directement un fichier à un service comme Cloudinary sans l'enregistrer sur le disque.
+// On l’utilise ici pour transmettre un fichier en mémoire (Buffer) via .pipe() au flux d’upload de Cloudinary.
+// lien du module streamifier sur npm: https://www.npmjs.com/package/streamifier
 const streamifier = require("streamifier");
 
 const EMAIL_REGEX =
