@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 console.log("Stripe API Key:", process.env.STRIPE_SECRET_KEY);
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-console.log("Après l'initialisation de Stripe");
 
 // Route pour créer un customer
 router.post("/create-customer", async (req, res) => {
