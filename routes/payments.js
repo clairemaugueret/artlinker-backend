@@ -51,7 +51,8 @@ router.post("/create-subscription", async (req, res) => {
     res.status(200).json({
       subscriptionId: subscription.id,
       subscription: subscription,
-      //clientSecret:subscription.latest_invoice.confirmation_secret.client_secret,
+      clientSecret:
+        subscription.latest_invoice.confirmation_secret.client_secret,
     });
   } catch (error) {
     // En cas d'erreur, on renvoie un message d'erreur au front

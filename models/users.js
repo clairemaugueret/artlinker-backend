@@ -7,7 +7,7 @@ const loansSchema = mongoose.Schema({
     ref: "artitems",
   },
   startDate: Date,
-  requestedStatus: {
+  requestStatus: {
     type: String,
     enum: [
       // option enum dans le schéma Mongoose pour restreindre les valeurs acceptées pour le champ
