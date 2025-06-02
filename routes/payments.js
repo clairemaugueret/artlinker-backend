@@ -50,8 +50,8 @@ router.post("/create-subscription", async (req, res) => {
     // On renvoie au front l'ID de l'abonnement et le clientSecret pour la confirmation du paiement
     res.status(200).json({
       subscriptionId: subscription.id,
-      clientSecret:
-        subscription.latest_invoice.confirmation_secret.client_secret,
+      subscription: subscription,
+      //clientSecret:subscription.latest_invoice.confirmation_secret.client_secret,
     });
   } catch (error) {
     // En cas d'erreur, on renvoie un message d'erreur au front
