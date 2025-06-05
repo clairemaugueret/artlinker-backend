@@ -27,10 +27,18 @@ router.post("/create-customer", async (req, res) => {
   }
 });
 
+// Cette grille associe chaque type d'abonnement et nombre d'œuvres à un Price ID Stripe spécifique
+const stripePriceIds = {
+  INDIVIDUAL_BASIC_COST: "price_1RWar9CRuiuQazlKlSEstSxv", // Price ID pour 1 œuvre - Particulier normal
+  INDIVIDUAL_REDUCT_COST: "price_1RWat4CRuiuQazlKD9XOHvIo",
+  PUBLIC_ESTABLISHMENT: "price_1RWLeYCRuiuQazlKgiQ90MCe", // Price ID pour 5 œuvres - Établissement public
+  LIBERAL_PRO: "price_1RWNUECRuiuQazlKO3hIvbGK", // Price ID pour 3 œuvres - Entreprise
+};
+
 // Route pour créer un abonnement
 router.post("/create-subscription", async (req, res) => {
   // On récupère le customerId et le priceId envoyés dans le body de la requête
-  const { customerId, priceId } = req.body;
+  const { customerId, subscriptionType, quantity } = req.body;
 
   try {
     // Création de l'abonnement Stripe avec les paramètres nécessaires
@@ -38,7 +46,8 @@ router.post("/create-subscription", async (req, res) => {
       customer: customerId, // L'identifiant du client Stripe à abonner
       items: [
         {
-          price: priceId, // L'identifiant du prix Stripe correspondant à l'abonnement choisi
+          price: stripePriceIds[subscriptionType], // L'identifiant du prix Stripe correspondant à l'abonnement choisi
+          quantity: quantity, // La quantité d'abonnements (par exemple, le nombre de licences)
         },
       ],
       payment_behavior: "default_incomplete", // Permet de créer l'abonnement sans valider le paiement immédiatement (utile pour SCA/3D Secure)
@@ -58,19 +67,5 @@ router.post("/create-subscription", async (req, res) => {
     res.status(400).json({ error: { message: error.message } });
   }
 });
-
-// Fonction helper pour obtenir l'ID de prix Stripe basé sur le type d'abonnement
-function getPriceIdForSubscriptionType(subscriptionType) {
-  // Cette fonction doit être implémentée selon votre configuration Stripe
-  // Elle doit retourner l'ID de prix Stripe correspondant à chaque type d'abonnement
-  switch (subscriptionType) {
-    case "basic":
-      return "price_basic123"; // Remplacez par votre vrai ID de prix Stripe
-    case "premium":
-      return "price_premium456"; // Remplacez par votre vrai ID de prix Stripe
-    default:
-      throw new Error("Type d'abonnement non reconnu");
-  }
-}
 
 module.exports = router;
